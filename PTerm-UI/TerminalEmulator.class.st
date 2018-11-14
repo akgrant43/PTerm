@@ -33,12 +33,26 @@ Class {
 TerminalEmulator class >> environ [
 	|collection|
 	collection := OrderedCollection new.
-	Smalltalk os environment asDictionary keysAndValuesDo: [ :k :v|
+	self environmentDictionary keysAndValuesDo: [ :k :v|
 		collection add: k,'=',v
 	].
-	collection add: 'LANG=en_US.UTF-8'.
 	collection add: 'TERM=linux'.
 	^collection 
+]
+
+{ #category : #'instance creation' }
+TerminalEmulator class >> environmentDictionary [
+	"Answer environment dictionary sans the VM directory in LD_LIBRARY_PATH"
+
+	| dict ldLibraryPath paths |
+
+	dict := Smalltalk os environment asDictionary.
+	ldLibraryPath := dict at: 'LD_LIBRARY_PATH' ifAbsent: [ ^dict ].
+	paths := ldLibraryPath splitOn: $:.
+	paths remove: FileLocator vmBinary parent pathString ifAbsent: [  ].
+	ldLibraryPath := ':' join: paths.
+	dict at: 'LD_LIBRARY_PATH' put: ldLibraryPath.
+	^dict
 ]
 
 { #category : #'world menu' }
@@ -97,9 +111,11 @@ TerminalEmulator class >> openBash [
 TerminalEmulator class >> openShell: path [
 	
 	| win term |
+
 	term := (PTerm new xspawn: { path. '-i'} env: self environ ).
 	"term := (PTermEcho new)."
 	win := self open.
+	win model setAltScreenColours: false.
 	term asProtocolStack
 		push: TerminalEmulatorXterm new;
 		push: win tty;
