@@ -36,6 +36,7 @@ TerminalEmulator class >> environ [
 	self environmentDictionary keysAndValuesDo: [ :k :v|
 		collection add: k,'=',v
 	].
+	collection add: 'LANG=en_US.UTF-8'.
 	collection add: 'TERM=linux'.
 	^collection 
 ]
